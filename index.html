@@ -164,27 +164,29 @@
     document.getElementById("formulario").style.display = "block";
   }
 
-  function guardarGasto() {
-    const categoria = categoria.value;
-    const importe = parseFloat(document.getElementById("importe").value);
-    const comentario = comentario.value;
-    if (!importe) return;
+function guardarGasto() {
+  const categoriaEl = document.getElementById("categoria");
+  const importeEl = document.getElementById("importe");
+  const comentarioEl = document.getElementById("comentario");
 
-    const fecha = new Date().toISOString().split("T")[0];
-    const mes = fecha.slice(0, 7);
+  const categoria = categoriaEl.value;
+  const importe = parseFloat(importeEl.value);
+  const comentario = comentarioEl.value;
 
-    const datos = obtenerDatos();
-    datos[mes] ??= {};
-    datos[mes][fecha] ??= [];
-    datos[mes][fecha].push({ categoria, importe, comentario });
+  if (!importe || importe <= 0) return;
 
-    guardarDatos(datos);
-    importe.value = comentario.value = "";
-    formulario.style.display = "none";
+  const fecha = new Date().toISOString().split("T")[0];
+  const mes = fecha.slice(0, 7);
 
-    cargarMeses();
-    cargarGastos();
-  }
+  const datos = obtenerDatos();
+  if (!datos[mes]) datos[mes] = {};
+  if (!datos[mes][fecha]) datos[mes][fecha] = [];
+
+  datos[mes][fecha].push({
+    categoria,
+    importe,
+    comentario
+  });
 
   function borrarGasto(m, d, i) {
     const datos = obtenerDatos();
@@ -327,3 +329,4 @@
 
 </body>
 </html>
+
