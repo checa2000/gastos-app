@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gastos personales</title>
+
+<link rel="manifest" href="manifest.json">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      padding: 15px;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .card {
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .mes-control {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .mes-control button {
+      width: 20%;
+    }
+
+    .mes-control select {
+      width: 60%;
+      text-align: center;
+    }
+
+    .dia {
+      font-weight: bold;
+      margin-top: 18px;
+    }
+
+    .gasto {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 15px;
+    }
+
+    .detalle {
+      color: #555;
+      font-size: 14px;
+    }
+
+    .borrar {
+      color: red;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    #formulario {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Control de gastos</h1>
+
+<div class="mes-control">
+  <button onclick="cambiarMes(-1)">⬅</button>
+  <select id="mesSelector" onchange="cargarGastos()"></select>
+  <button onclick="cambiarMes(1)">➡</button>
+</div>
+
+<h2 id="totalMes">Total mes: 0 €</h2>
+
+<div class="card">
+  <canvas id="grafica"></canvas>
+</div>
+
+<button onclick="mostrarFormulario()">➕ Añadir gasto</button>
+
+<div id="formulario" class="card">
+  <select id="categoria">
+    <option>Comida</option>
+    <option>Transporte</option>
+    <option>Ocio</option>
+    <option>Otros</option>
+  </select>
+
+  <input type="number" id="importe" placeholder="Importe (€)" step="0.01">
+  <input type="text" id="comentario" placeholder="Comentario (opcional)">
+  <button onclick="guardarGasto()">Guardar</button>
+</div>
+
+<div id="resumenCategorias" class="card"></div>
+<div id="listaGastos"></div>
+
+<button onclick="exportarCSV()">⬇ Exportar a Excel</button>
+
+<script>
+  let grafica = null;
+
+  const colores = {
+    Comida: "#b7e4c7",
+    Transporte: "#cfe0ff",
+    Ocio: "#fff3b0",
+    Otros: "#e0c3fc"
+  };
+
+  function obtenerDatos() {
+    return JSON.parse(localStorage.getItem("gastos")) || {};
+  }
+
+  function guardarDatos(datos) {
+    localStorage.setItem("gastos", JSON.stringify(datos));
+  }
+
+  function mesActual() {
+    const f = new Date();
+    return f.getFullYear() + "-" + String(f.getMonth() + 1).padStart(2, "0");
+  }
+
+  function nombreMes(m) {
+    const [y, mo] = m.split("-");
+    return new Date(y, mo - 1, 1).toLocaleDateString("es-ES", {
+      month: "long",
+      year: "numeric"
+    });
+  }
+
+  function formatearFecha(f) {
+    return new Date(f).toLocaleDateString("es-ES", {
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
+  }
+
+  function mostrarFormulario() {
+    document.getElementById("formulario").style.display = "block";
+  }
+
+  function guardarGasto() {
+    const categoria = categoria.value;
+    const importe = parseFloat(document.getElementById("importe").value);
+    const comentario = comentario.value;
+    if (!importe) return;
+
+    const fecha = new Date().toISOString().split("T")[0];
+    const mes = fecha.slice(0, 7);
+
+    const datos = obtenerDatos();
+    datos[mes] ??= {};
+    datos[mes][fecha] ??= [];
+    datos[mes][fecha].push({ categoria, importe, comentario });
+
+    guardarDatos(datos);
+    importe.value = comentario.value = "";
+    formulario.style.display = "none";
+
+    cargarMeses();
+    cargarGastos();
+  }
+
+  function borrarGasto(m, d, i) {
+    const datos = obtenerDatos();
+    datos[m][d].splice(i, 1);
+    if (!datos[m][d].length) delete datos[m][d];
+    guardarDatos(datos);
+    cargarGastos();
+  }
+
+  function cargarMeses() {
+    const s = mesSelector;
+    s.innerHTML = "";
+    const meses = Object.keys(obtenerDatos()).sort().reverse();
+    if (!meses.includes(mesActual())) meses.unshift(mesActual());
+
+    meses.forEach(m => {
+      const o = document.createElement("option");
+      o.value = m;
+      o.textContent =
+        nombreMes(m).charAt(0).toUpperCase() + nombreMes(m).slice(1);
+      s.appendChild(o);
+    });
+
+    if (!s.value) s.value = mesActual();
+  }
+
+  function cambiarMes(dir) {
+    const s = mesSelector;
+    const i = s.selectedIndex + dir;
+    if (i >= 0 && i < s.options.length) {
+      s.selectedIndex = i;
+      cargarGastos();
+    }
+  }
+
+  function cargarGastos() {
+    const lista = listaGastos;
+    const resumen = resumenCategorias;
+    const mes = mesSelector.value;
+    lista.innerHTML = "";
+    resumen.innerHTML = "<strong>Resumen por categoría</strong><br>";
+
+    const datos = obtenerDatos();
+    if (!datos[mes]) return;
+
+    let totalMes = 0;
+    const categorias = {};
+
+    Object.keys(datos[mes]).sort().forEach(dia => {
+      let totalDia = 0;
+      const h = document.createElement("div");
+      h.className = "dia";
+      const f = formatearFecha(dia);
+      h.textContent = f.charAt(0).toUpperCase() + f.slice(1);
+      lista.appendChild(h);
+
+      datos[mes][dia].forEach((g, i) => {
+        totalMes += g.importe;
+        totalDia += g.importe;
+        categorias[g.categoria] = (categorias[g.categoria] || 0) + g.importe;
+
+        const d = document.createElement("div");
+        d.className = "gasto";
+        d.innerHTML = `
+          <div>
+            ${g.categoria}: ${g.importe.toFixed(2)} €
+            ${g.comentario ? `<div class="detalle">${g.comentario}</div>` : ""}
+          </div>
+          <span class="borrar" onclick="borrarGasto('${mes}','${dia}',${i})">✖</span>
+        `;
+        lista.appendChild(d);
+      });
+
+      const td = document.createElement("div");
+      td.className = "detalle";
+      td.textContent = "Total día: " + totalDia.toFixed(2) + " €";
+      lista.appendChild(td);
+    });
+
+    totalMesEl.textContent = "Total mes: " + totalMes.toFixed(2) + " €";
+    for (const c in categorias)
+      resumen.innerHTML += `${c}: ${categorias[c].toFixed(2)} €<br>`;
+
+    dibujarGrafica(categorias);
+  }
+
+  function dibujarGrafica(cats) {
+    const ctx = document.getElementById("grafica");
+    if (grafica) grafica.destroy();
+
+    grafica = new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels: Object.keys(cats),
+        datasets: [{
+          data: Object.values(cats),
+          backgroundColor: Object.keys(cats).map(c => colores[c])
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { position: "bottom" }
+        }
+      }
+    });
+  }
+
+  function exportarCSV() {
+    const datos = obtenerDatos();
+    let csv = "Mes,Fecha,Categoria,Importe,Comentario\n";
+    for (const m in datos)
+      for (const d in datos[m])
+        datos[m][d].forEach(g =>
+          csv += `${m},${d},${g.categoria},${g.importe},"${g.comentario || ""}"\n`
+        );
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = "gastos.csv";
+    a.click();
+  }
+
+  const mesSelector = document.getElementById("mesSelector");
+  const listaGastos = document.getElementById("listaGastos");
+  const resumenCategorias = document.getElementById("resumenCategorias");
+  const totalMesEl = document.getElementById("totalMes");
+  const categoria = document.getElementById("categoria");
+  const importe = document.getElementById("importe");
+  const comentario = document.getElementById("comentario");
+  const formulario = document.getElementById("formulario");
+
+  cargarMeses();
+  cargarGastos();
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+  }
+</script>
+
+</body>
+</html>
