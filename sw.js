@@ -1,7 +1,8 @@
 const CACHE_NAME = "gastos-app-v1";
 const FILES = [
-  "gastos.html",
-  "manifest.json"
+  "/gastos-app/",
+  "/gastos-app/index.html",
+  "/gastos-app/manifest.json"
 ];
 
 self.addEventListener("install", e => {
