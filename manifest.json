@@ -1,7 +1,7 @@
 {
   "name": "Control de gastos",
   "short_name": "Gastos",
-  "start_url": "gastos.html",
+  "start_url": "/gastos-app/",
   "display": "standalone",
   "background_color": "#f2f2f2",
   "theme_color": "#f2f2f2",
@@ -18,3 +18,4 @@
     }
   ]
 }
+
