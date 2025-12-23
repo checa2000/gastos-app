@@ -61,6 +61,7 @@ select, input {
 <body>
 
 <header>
+  <canvas id="grafica" height="220"></canvas>
   <button onclick="cambiarMes(-1)">◀</button>
   <strong id="tituloMes"></strong>
   <button onclick="cambiarMes(1)">▶</button>
@@ -83,7 +84,8 @@ select, input {
 </div>
 
 <div id="listaGastos"></div>
-
+  
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 let mesActual = new Date();
 
@@ -177,3 +179,4 @@ cargarMes();
 
 </body>
 </html>
+
