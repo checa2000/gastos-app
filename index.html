@@ -34,6 +34,12 @@ button {
   width: calc(100% - 20px);
 }
 
+#grafica {
+  background: white;
+  margin: 10px;
+  border-radius: 10px;
+}
+
 #formulario {
   display: none;
   background: white;
@@ -61,11 +67,12 @@ select, input {
 <body>
 
 <header>
-  <canvas id="grafica" height="220"></canvas>
   <button onclick="cambiarMes(-1)">◀</button>
   <strong id="tituloMes"></strong>
   <button onclick="cambiarMes(1)">▶</button>
 </header>
+
+<canvas id="grafica" height="220"></canvas>
 
 <button id="addBtn" onclick="mostrarFormulario()">+ Añadir gasto</button>
 
@@ -84,19 +91,19 @@ select, input {
 </div>
 
 <div id="listaGastos"></div>
-  
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
 <script>
-  let grafica = null;
+let mesActual = new Date();
+let grafica = null;
 
 const coloresCategoria = {
-  ocio: "rgba(255, 235, 59, 0.7)",        // amarillo pastel
-  transporte: "rgba(144, 202, 249, 0.7)", // azul pastel
-  comida: "rgba(165, 214, 167, 0.7)",     // verde pastel
-  otros: "rgba(206, 147, 216, 0.7)"       // púrpura pastel
+  ocio: "rgba(255, 235, 59, 0.7)",
+  transporte: "rgba(144, 202, 249, 0.7)",
+  comida: "rgba(165, 214, 167, 0.7)",
+  otros: "rgba(206, 147, 216, 0.7)"
 };
-
-let mesActual = new Date();
 
 function obtenerDatos() {
   return JSON.parse(localStorage.getItem("gastos")) || {};
@@ -111,8 +118,6 @@ function mostrarFormulario() {
 }
 
 function guardarGasto() {
-  console.log("guardarGasto ejecutado");
-
   const categoriaValor = document.getElementById("categoria").value;
   const importeValor = parseFloat(document.getElementById("importe").value);
   const comentarioValor = document.getElementById("comentario").value;
@@ -148,8 +153,6 @@ function cargarMes() {
   const titulo = mesActual.toLocaleDateString("es-ES", {
     month: "long",
     year: "numeric"
-   dibujarGraficaMensual(resumen);
-
   });
   document.getElementById("tituloMes").textContent =
     titulo.charAt(0).toUpperCase() + titulo.slice(1);
@@ -157,14 +160,13 @@ function cargarMes() {
   const lista = document.getElementById("listaGastos");
   lista.innerHTML = "";
 
-const resumen = {
-  ocio: 0,
-  transporte: 0,
-  comida: 0,
-  otros: 0
-};
+  const resumen = {
+    ocio: 0,
+    transporte: 0,
+    comida: 0,
+    otros: 0
+  };
 
-  
   if (datos[claveMes]) {
     Object.keys(datos[claveMes]).forEach(fecha => {
       const div = document.createElement("div");
@@ -180,13 +182,15 @@ const resumen = {
       div.innerHTML = `<strong>${fechaBonita}</strong><br>`;
 
       datos[claveMes][fecha].forEach(g => {
-        div.innerHTML += `${g.categoria}: ${g.importe} € (${g.comentario})<br>`;
+        div.innerHTML += `${g.categoria}: ${g.importe.toFixed(2)} € (${g.comentario})<br>`;
         resumen[g.categoria] += g.importe;
       });
 
       lista.appendChild(div);
     });
   }
+
+  dibujarGraficaMensual(resumen);
 }
 
 function dibujarGraficaMensual(resumen) {
@@ -194,9 +198,7 @@ function dibujarGraficaMensual(resumen) {
     const canvas = document.getElementById("grafica");
     if (!canvas) return;
 
-    if (grafica) {
-      grafica.destroy();
-    }
+    if (grafica) grafica.destroy();
 
     grafica = new Chart(canvas, {
       type: "pie",
@@ -233,5 +235,3 @@ cargarMes();
 
 </body>
 </html>
-
-
