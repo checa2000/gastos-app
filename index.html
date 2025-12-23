@@ -87,6 +87,15 @@ select, input {
   
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
+  let grafica = null;
+
+const coloresCategoria = {
+  ocio: "rgba(255, 235, 59, 0.7)",        // amarillo pastel
+  transporte: "rgba(144, 202, 249, 0.7)", // azul pastel
+  comida: "rgba(165, 214, 167, 0.7)",     // verde pastel
+  otros: "rgba(206, 147, 216, 0.7)"       // púrpura pastel
+};
+
 let mesActual = new Date();
 
 function obtenerDatos() {
@@ -139,6 +148,8 @@ function cargarMes() {
   const titulo = mesActual.toLocaleDateString("es-ES", {
     month: "long",
     year: "numeric"
+   dibujarGraficaMensual(resumen);
+
   });
   document.getElementById("tituloMes").textContent =
     titulo.charAt(0).toUpperCase() + titulo.slice(1);
@@ -146,6 +157,14 @@ function cargarMes() {
   const lista = document.getElementById("listaGastos");
   lista.innerHTML = "";
 
+const resumen = {
+  ocio: 0,
+  transporte: 0,
+  comida: 0,
+  otros: 0
+};
+
+  
   if (datos[claveMes]) {
     Object.keys(datos[claveMes]).forEach(fecha => {
       const div = document.createElement("div");
@@ -162,10 +181,45 @@ function cargarMes() {
 
       datos[claveMes][fecha].forEach(g => {
         div.innerHTML += `${g.categoria}: ${g.importe} € (${g.comentario})<br>`;
+        resumen[g.categoria] += g.importe;
       });
 
       lista.appendChild(div);
     });
+  }
+}
+
+function dibujarGraficaMensual(resumen) {
+  try {
+    const canvas = document.getElementById("grafica");
+    if (!canvas) return;
+
+    if (grafica) {
+      grafica.destroy();
+    }
+
+    grafica = new Chart(canvas, {
+      type: "pie",
+      data: {
+        labels: Object.keys(resumen),
+        datasets: [{
+          data: Object.values(resumen),
+          backgroundColor: Object.keys(resumen).map(
+            c => coloresCategoria[c]
+          )
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: "bottom"
+          }
+        }
+      }
+    });
+  } catch (e) {
+    console.error("Error en la gráfica:", e);
   }
 }
 
@@ -179,4 +233,5 @@ cargarMes();
 
 </body>
 </html>
+
 
