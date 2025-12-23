@@ -1,8 +1,11 @@
-const CACHE_NAME = "gastos-app-v2";
+const CACHE_NAME = "gastos-v1";
 const FILES = [
-  "/gastos-app/",
-  "/gastos-app/index.html",
-  "/gastos-app/manifest.json"
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./icon-192.png",
+  "./icon-512.png",
+  "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
 ];
 
 self.addEventListener("install", e => {
@@ -13,7 +16,6 @@ self.addEventListener("install", e => {
 
 self.addEventListener("fetch", e => {
   e.respondWith(
-    caches.match(e.request).then(resp => resp || fetch(e.request))
+    caches.match(e.request).then(res => res || fetch(e.request))
   );
 });
-
