@@ -1,110 +1,91 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de gastos</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de gastos</title>
 
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#f2f2f2">
+<style>
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  background: #f5f5f5;
+}
 
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      margin: 0;
-      background: #f7f7f7;
-    }
-    header {
-      background: white;
-      padding: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    button {
-      padding: 10px 14px;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-    }
-    #addBtn {
-      background: #4caf50;
-      color: white;
-      margin: 10px;
-      width: calc(100% - 20px);
-    }
-    #formulario {
-      display: none;
-      padding: 15px;
-      background: white;
-      margin: 10px;
-      border-radius: 10px;
-    }
-    select, input {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 10px;
-      font-size: 16px;
-    }
-    .dia {
-      background: white;
-      margin: 10px;
-      padding: 10px;
-      border-radius: 10px;
-    }
-    canvas {
-      background: white;
-      margin: 10px;
-      border-radius: 10px;
-    }
-  </style>
+header {
+  background: white;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+#addBtn {
+  background: #4caf50;
+  color: white;
+  margin: 10px;
+  width: calc(100% - 20px);
+}
+
+#formulario {
+  display: none;
+  background: white;
+  margin: 10px;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+select, input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.dia {
+  background: white;
+  margin: 10px;
+  padding: 10px;
+  border-radius: 10px;
+}
+</style>
 </head>
 
 <body>
 
 <header>
   <button onclick="cambiarMes(-1)">◀</button>
-  <h3 id="tituloMes"></h3>
+  <strong id="tituloMes"></strong>
   <button onclick="cambiarMes(1)">▶</button>
 </header>
 
-<main>
+<button id="addBtn" onclick="mostrarFormulario()">+ Añadir gasto</button>
 
-  <canvas id="grafica" height="200"></canvas>
+<div id="formulario">
+  <select id="categoria">
+    <option value="ocio">Ocio</option>
+    <option value="transporte">Transporte</option>
+    <option value="comida">Comida</option>
+    <option value="otros">Otros</option>
+  </select>
 
-  <button id="addBtn" onclick="mostrarFormulario()">+ Añadir gasto</button>
+  <input id="importe" type="number" placeholder="Importe €">
+  <input id="comentario" type="text" placeholder="Comentario">
 
-  <div id="formulario">
-    <select id="categoria">
-      <option value="ocio">Ocio</option>
-      <option value="transporte">Transporte</option>
-      <option value="comida">Comida</option>
-      <option value="otros">Otros</option>
-    </select>
+  <button onclick="guardarGasto()">Guardar</button>
+</div>
 
-    <input id="importe" type="number" placeholder="Importe €" step="0.01">
-    <input id="comentario" type="text" placeholder="Comentario">
-
-    <button onclick="guardarGasto()">Guardar</button>
-  </div>
-
-  <div id="listaGastos"></div>
-
-</main>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div id="listaGastos"></div>
 
 <script>
 let mesActual = new Date();
-let grafica;
-
-const colores = {
-  ocio: "rgba(255,235,59,0.6)",
-  transporte: "rgba(144,202,249,0.6)",
-  comida: "rgba(165,214,167,0.6)",
-  otros: "rgba(206,147,216,0.6)"
-};
 
 function obtenerDatos() {
   return JSON.parse(localStorage.getItem("gastos")) || {};
@@ -119,13 +100,11 @@ function mostrarFormulario() {
 }
 
 function guardarGasto() {
-  const categoriaEl = document.getElementById("categoria");
-  const importeEl = document.getElementById("importe");
-  const comentarioEl = document.getElementById("comentario");
+  console.log("guardarGasto ejecutado");
 
-  const categoriaValor = categoriaEl.value;
-  const importeValor = parseFloat(importeEl.value);
-  const comentarioValor = comentarioEl.value;
+  const categoriaValor = document.getElementById("categoria").value;
+  const importeValor = parseFloat(document.getElementById("importe").value);
+  const comentarioValor = document.getElementById("comentario").value;
 
   if (!importeValor || importeValor <= 0) return;
 
@@ -144,8 +123,8 @@ function guardarGasto() {
 
   guardarDatos(datos);
 
-  importeEl.value = "";
-  comentarioEl.value = "";
+  document.getElementById("importe").value = "";
+  document.getElementById("comentario").value = "";
   document.getElementById("formulario").style.display = "none";
 
   cargarMes();
@@ -153,7 +132,7 @@ function guardarGasto() {
 
 function cargarMes() {
   const datos = obtenerDatos();
-  const mesClave = mesActual.toISOString().slice(0, 7);
+  const claveMes = mesActual.toISOString().slice(0, 7);
 
   const titulo = mesActual.toLocaleDateString("es-ES", {
     month: "long",
@@ -165,12 +144,10 @@ function cargarMes() {
   const lista = document.getElementById("listaGastos");
   lista.innerHTML = "";
 
-  let resumen = { ocio: 0, transporte: 0, comida: 0, otros: 0 };
-
-  if (datos[mesClave]) {
-    Object.keys(datos[mesClave]).forEach(fecha => {
-      const dia = document.createElement("div");
-      dia.className = "dia";
+  if (datos[claveMes]) {
+    Object.keys(datos[claveMes]).forEach(fecha => {
+      const div = document.createElement("div");
+      div.className = "dia";
 
       const fechaBonita = new Date(fecha).toLocaleDateString("es-ES", {
         weekday: "long",
@@ -179,40 +156,19 @@ function cargarMes() {
         year: "numeric"
       });
 
-      dia.innerHTML = `<strong>${fechaBonita}</strong><br>`;
+      div.innerHTML = `<strong>${fechaBonita}</strong><br>`;
 
-      datos[mesClave][fecha].forEach(g => {
-        dia.innerHTML += `
-          ${g.categoria}: ${g.importe.toFixed(2)} € (${g.comentario})<br>
-        `;
-        resumen[g.categoria] += g.importe;
+      datos[claveMes][fecha].forEach(g => {
+        div.innerHTML += `${g.categoria}: ${g.importe} € (${g.comentario})<br>`;
       });
 
-      lista.appendChild(dia);
+      lista.appendChild(div);
     });
   }
-
-  dibujarGrafica(resumen);
 }
 
-function dibujarGrafica(resumen) {
-  const ctx = document.getElementById("grafica");
-  if (grafica) grafica.destroy();
-
-  grafica = new Chart(ctx, {
-    type: "pie",
-    data: {
-      labels: Object.keys(resumen),
-      datasets: [{
-        data: Object.values(resumen),
-        backgroundColor: Object.keys(resumen).map(c => colores[c])
-      }]
-    }
-  });
-}
-
-function cambiarMes(dir) {
-  mesActual.setMonth(mesActual.getMonth() + dir);
+function cambiarMes(d) {
+  mesActual.setMonth(mesActual.getMonth() + d);
   cargarMes();
 }
 
