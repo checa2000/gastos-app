@@ -1,4 +1,4 @@
-const CACHE_NAME = "gastos-app-v1";
+const CACHE_NAME = "gastos-app-v2";
 const FILES = [
   "/gastos-app/",
   "/gastos-app/index.html",
@@ -16,3 +16,4 @@ self.addEventListener("fetch", e => {
     caches.match(e.request).then(resp => resp || fetch(e.request))
   );
 });
+
